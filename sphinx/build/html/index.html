@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Iudex &mdash; iudex 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="iudex 0.1.0 documentation" href="#" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="iudex">
+<h1>Iudex<a class="headerlink" href="#iudex" title="Permalink to this headline">¶</a></h1>
+<p>Iudex is a smart contract based reputation system. As a user, you are
+able to verify the ownership of accounts of different services (such as
+your Twitter, Facebook and Github account) as well as link one or more
+Ethereum addresses. In the future it will also support verifying
+ownership of Bitcoin addresses via <code class="docutils literal"><span class="pre">ecverify</span></code> and verifying ownership
+of domain names via DNS records.</p>
+<p>Iudex also includes a scoring system for each of these accounts,
+calculating how reputable you are on each of them. Additionally it
+provides a combined score across all your linked accounts.</p>
+<p>Both the list of verified accounts and the scores can be queried by the
+public and used in various way.</p>
+<p>The verification and scoring processes/algorithms are elected based on
+voting by the public. Therefore new ways to calculate reputation can
+replace current ones, if the public deems them more appropriate or
+accurate.</p>
+<div class="section" id="live-contracts">
+<h2>Live contracts<a class="headerlink" href="#live-contracts" title="Permalink to this headline">¶</a></h2>
+<p>The version tagged as <code class="docutils literal"><span class="pre">hackethercamp</span></code> has the lookup address of
+<code class="docutils literal"><span class="pre">0x1801f6139ce165a121e403641f2f7809c7ffa8a8</span></code>.</p>
+</div>
+<div class="section" id="a-live-example-frontend-interfacing-with-the-api-is-available-here">
+<h2>A live example frontend interfacing with the API is <a class="reference external" href="http://iudex.github.io/frontend/">available here</a>.<a class="headerlink" href="#a-live-example-frontend-interfacing-with-the-api-is-available-here" title="Permalink to this headline">¶</a></h2>
+<p>Make sure to check the frontend, within Mist too!</p>
+</div>
+<div class="section" id="verification-process">
+<h2>Verification process<a class="headerlink" href="#verification-process" title="Permalink to this headline">¶</a></h2>
+<p>Before verification can proceed, a user has to create a new Iudex
+account, which at a start will not have anything linked, apart of the
+Ethereum address used to register.</p>
+<p>The verification process is unique to each of the services, but usually
+it follows these steps:</p>
+<ul class="simple">
+<li>the registered user of Iudex receives a unique code to publish (his
+ID)</li>
+<li>the user publishes this code on the given services (e.g. posts a
+tweet with it)</li>
+<li>this proof location (e.g. the url of the exact tweet) is then
+submitted to Iudex along with the username</li>
+<li>Iudex will connect to this URL via
+<a class="reference external" href="http://oraclize.it">Oraclize.it</a> and will verify if the code
+matches (it is of course possible to have verifiers without using
+<em>Oraclize</em> or others oracles)</li>
+</ul>
+<p>With <em>Oraclize</em> we are storing the IPFS key to the proof of the
+transactions. See
+<a class="reference external" href="https://docs.oraclize.it/call_execution.html#tlsnotary-proof">this</a>
+for an explanation how and what kind of proofs are provided by Oraclize.
+You can independently check the honesty of the service by using <a class="reference external" href="http://www.oraclize.it/service/monitor">this
+web-based client-side tool</a>.</p>
+</div>
+<div class="section" id="scoring-process">
+<h2>Scoring process<a class="headerlink" href="#scoring-process" title="Permalink to this headline">¶</a></h2>
+<p>Scoring can only be done with verified accounts. Each of these accounts
+have different ways of retrieving user data (such as number of posts,
+number of followers, etc) and different ways of creating a score from
+that.</p>
+</div>
+<div class="section" id="example-use-case-btc-eth-smart-escrow">
+<h2>Example use case: BTC-ETH smart escrow<a class="headerlink" href="#example-use-case-btc-eth-smart-escrow" title="Permalink to this headline">¶</a></h2>
+<p>As an example we have included an escrow contract for selling Bitcoins
+for Ethers.</p>
+<p>The reputation score of the seller is used to determine how many
+confirmations are needed at a minimum after receiving the Bitcoins and
+before releasing the Ethers.</p>
+<p>Let&#8217;s see how simple it is to interface with Iudex. The interface used
+by the escrow:</p>
+<div class="code js highlight-python"><div class="highlight"><pre>function getMinConfirmationsByAddr(address _ethAddr) internal returns (uint) {
+    uint score = getIudexScoreAll(IudexLookupAddr, _ethAddr);
+    return 10 - ((score - 1)/100000);
+}
+</pre></div>
+</div>
+<p>Full code is available
+<a class="reference external" href="https://github.com/iudex/iudex/blob/master/contracts/escrow.sol">here</a>.</p>
+<div class="section" id="architecture">
+<h3>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h3>
+<p>The core of the architecture consists of:</p>
+<ul class="simple">
+<li>Central storage (CS)</li>
+<li>Verification providers (VP)</li>
+<li>Score providers (SP)</li>
+</ul>
+<p>Both <em>VP</em> and <em>SP</em> are using <em>CS</em> to store the results of their
+operation.</p>
+<p>Each of the <em>VP</em> and <em>SP</em> are selected based on voting (to be
+implemented).</p>
+<p>There are also helpers to manage the address lookups and the voting
+process.</p>
+<p>Important to note, that the <em>CS</em> is not keeping a history at all, it
+only stores the latest data. The Ethereum blockchain itself can be used
+to retrieve the history of changes (e.g. storage changes in the <em>CS</em>
+contract).</p>
+</div>
+<div class="section" id="data-stored">
+<h3>Data stored<a class="headerlink" href="#data-stored" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Unique identifiers (this is a 256bit identifier created upon
+registering)</li>
+<li>One or more Ethereum addresses</li>
+<li>For each of the verified accounts:</li>
+<li>Username</li>
+<li>Proof of verification (IPFS key for downloaded web data, see
+<em>Oraclize</em>)</li>
+<li>Whether verification was successful or not</li>
+<li>The current reputation score</li>
+<li>Various length of unverified extra data (can hold either <code class="docutils literal"><span class="pre">bytes</span></code> or
+<code class="docutils literal"><span class="pre">uint</span></code>, addressed by a <code class="docutils literal"><span class="pre">bytes32</span></code> key)</li>
+</ul>
+</div>
+<div class="section" id="api">
+<h3>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="lookup">
+<h2>Lookup<a class="headerlink" href="#lookup" title="Permalink to this headline">¶</a></h2>
+<p>The lookup contract stores the address of Storage as well the addresses
+of the verification and scoring algorithms.</p>
+<p>The public methods are:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">addrStorage()</span></code> - retrieve the address of Storage</li>
+<li><code class="docutils literal"><span class="pre">setStorage(address)</span></code> - set a new address for Storage</li>
+<li><code class="docutils literal"><span class="pre">accountProviders(type)</span></code> - retrieve the address for a provider</li>
+<li><code class="docutils literal"><span class="pre">setAccountProviders(type,</span> <span class="pre">address)</span></code> - set a new address for a
+provider</li>
+</ul>
+<p>The types include:</p>
+<ul class="simple">
+<li>1 for Twitter</li>
+<li>2 for Facebook</li>
+<li>3 for Github</li>
+</ul>
+</div>
+<div class="section" id="storage">
+<h2>Storage<a class="headerlink" href="#storage" title="Permalink to this headline">¶</a></h2>
+<p>The storage contract stores all the relevant information about a given
+user. At the moment it also handles the linking of Ethereum addresses
+and other accounts.</p>
+<p>The public methods are:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">register()</span></code> - register a new account linked to the sender&#8217;s
+Ethereum address</li>
+<li><code class="docutils literal"><span class="pre">addressToPersonId(address</span> <span class="pre">addr)</span></code> - retrieve a user identifier with
+an address</li>
+<li><code class="docutils literal"><span class="pre">addressPresent(address</span> <span class="pre">addr)</span></code> - quick check to see if an Ethereum
+adress is linked</li>
+<li><code class="docutils literal"><span class="pre">linkAddress(address</span> <span class="pre">addr)</span></code> - associate a new Ethereum address</li>
+<li><code class="docutils literal"><span class="pre">unlinkAddress(address</span> <span class="pre">addr)</span></code> - remove a currently associated
+Ethereum address</li>
+<li><code class="docutils literal"><span class="pre">linkAccount(uint8</span> <span class="pre">accountProvider,</span> <span class="pre">string</span> <span class="pre">userId,</span> <span class="pre">string</span> <span class="pre">proofLocation)</span></code>
+- initiate the setup of a new linked account</li>
+<li><code class="docutils literal"><span class="pre">getScore(uint8</span> <span class="pre">accountProvider,</span> <span class="pre">bytes32</span> <span class="pre">id)</span></code> - get a score for a
+given user and account type</li>
+<li><code class="docutils literal"><span class="pre">refreshScore(uint8</span> <span class="pre">accountProvider,</span> <span class="pre">bytes32</span> <span class="pre">id)</span></code> - ask for a new
+score to be calculated for a given user and account type</li>
+</ul>
+<p>The private methods are:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">updateAccount(uint8</span> <span class="pre">accountProvider,</span> <span class="pre">bytes32</span> <span class="pre">id,</span> <span class="pre">bool</span> <span class="pre">result,</span> <span class="pre">bytes32</span> <span class="pre">ipfsProof)</span></code>
+- used by account providers to update Storage with the result of the
+verification</li>
+<li><code class="docutils literal"><span class="pre">updateScore(uint8</span> <span class="pre">accountProvider,</span> <span class="pre">bytes32</span> <span class="pre">id,</span> <span class="pre">uint24</span> <span class="pre">score)</span></code> -
+used by score providers to update Storage with a new score</li>
+</ul>
+</div>
+<div class="section" id="linking-new-account-providers">
+<h2>Linking new account providers<a class="headerlink" href="#linking-new-account-providers" title="Permalink to this headline">¶</a></h2>
+<p>Implementing a new provider couldn&#8217;t be much simpler. First allocate a
+new <code class="docutils literal"><span class="pre">accountProvider</span></code> type by adding it to both <code class="docutils literal"><span class="pre">lookup</span></code> and
+<code class="docutils literal"><span class="pre">accountProviderBase</span></code>.</p>
+<p>Then just create a new provider class with <code class="docutils literal"><span class="pre">accountProviderBase</span></code> as
+the parent. Only two methods need to be supported:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">verify(bytes32</span> <span class="pre">id,</span> <span class="pre">string</span> <span class="pre">userId,</span> <span class="pre">string</span> <span class="pre">proofLocation)</span></code></li>
+<li><code class="docutils literal"><span class="pre">score(bytes32</span> <span class="pre">id,</span> <span class="pre">string</span> <span class="pre">userId)</span></code></li>
+</ul>
+<p>If you need to use an oracle to validate the account, check out the
+twitter implementation for an example on how to use <em>Oraclize</em>.</p>
+</div>
+<div class="section" id="integration-as-a-contract">
+<h2>Integration as a contract<a class="headerlink" href="#integration-as-a-contract" title="Permalink to this headline">¶</a></h2>
+<p>As a contract author you are encouraged to use our integration piece
+called <code class="docutils literal"><span class="pre">iudexAPI</span></code>.</p>
+<p>This lists all the publicly available methods as well as gives you a few
+handy methods to retrieve a reputation score:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">getIudexScoreAll(address</span> <span class="pre">lookupAddr,</span> <span class="pre">bytes32</span> <span class="pre">userId)</span></code> - to get a
+score for a user id</li>
+<li><code class="docutils literal"><span class="pre">getIudexScoreAll(address</span> <span class="pre">lookupAddr,</span> <span class="pre">address</span> <span class="pre">addr)</span></code> - to get a
+score based on an Ethereum address</li>
+</ul>
+<div class="section" id="authors">
+<h3>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h3>
+<p>Iudex was entirely created during the
+<a class="reference external" href="http://hack.ether.camp">hack.ether.camp</a> online hackathon by:</p>
+<ul class="simple">
+<li>Alex Beregszaszi <a class="reference external" href="http://twitter.com/alexberegszaszi">twitter</a>
+<a class="reference external" href="http://github.com/axic">github</a></li>
+<li>Thomas Bertani <a class="reference external" href="http://twitter.com/ThomasBertani">twitter</a>
+<a class="reference external" href="http://github.com/bertani">github</a></li>
+</ul>
+<p>The live IDE is/was available at
+<a class="reference external" href="http://iudex.on.ether.camp">iudex.on.ether.camp</a>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Iudex</a><ul>
+<li><a class="reference internal" href="#live-contracts">Live contracts</a></li>
+<li><a class="reference internal" href="#a-live-example-frontend-interfacing-with-the-api-is-available-here">A live example frontend interfacing with the API is available here.</a></li>
+<li><a class="reference internal" href="#verification-process">Verification process</a></li>
+<li><a class="reference internal" href="#scoring-process">Scoring process</a></li>
+<li><a class="reference internal" href="#example-use-case-btc-eth-smart-escrow">Example use case: BTC-ETH smart escrow</a><ul>
+<li><a class="reference internal" href="#architecture">Architecture</a></li>
+<li><a class="reference internal" href="#data-stored">Data stored</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lookup">Lookup</a></li>
+<li><a class="reference internal" href="#storage">Storage</a></li>
+<li><a class="reference internal" href="#linking-new-account-providers">Linking new account providers</a></li>
+<li><a class="reference internal" href="#integration-as-a-contract">Integration as a contract</a><ul>
+<li><a class="reference internal" href="#authors">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Alex Beregszaszi, Thomas Bertani.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/index.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
