@@ -1,0 +1,3 @@
+[submodule "iudex"]
+	path = iudex
+	url = https://github.com/iudex/iudex.git
